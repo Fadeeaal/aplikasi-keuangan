@@ -2,131 +2,210 @@
 
 Aplikasi mobile sederhana untuk manajemen keuangan pribadi yang dibangun dengan React Native dan Expo.
 
-## Fitur Utama
+## 📱 Navigasi Aplikasi
 
-### � Halaman Beranda
-- Menampilkan total saldo saat ini dengan indikator warna (hijau untuk positif, merah untuk negatif)
-- Ringkasan pemasukan dan pengeluaran dalam bentuk kartu yang mudah dibaca
-- Grafik batang sederhana yang menampilkan tren pemasukan vs pengeluaran bulanan
-- Tombol aksi cepat untuk menambah pemasukan atau pengeluaran
+### Tab Navigation
+- **Beranda**: Menampilkan ringkasan keuangan dan grafik
+- **Transaksi**: Menampilkan daftar semua transaksi
 
-### 📝 Halaman Daftar Transaksi
-- Daftar lengkap semua transaksi dengan informasi:
-  - Tanggal transaksi
-  - Keterangan/deskripsi
-  - Jumlah dengan warna berbeda (hijau untuk pemasukan, merah untuk pengeluaran)
-- Filter transaksi berdasarkan:
-  - Jenis transaksi (semua/pemasukan/pengeluaran)
-  - Rentang tanggal
-- Fitur hapus transaksi dengan long press
-- Pull-to-refresh untuk memperbarui data
+## 🏠 Halaman Beranda
 
-### ➕ Halaman Tambah Transaksi
-- Form untuk menambahkan transaksi baru dengan:
-  - Pemilihan jenis transaksi (pemasukan atau pengeluaran)
-  - Input nominal dengan format currency Indonesia
-  - Input keterangan (opsional)
-  - Tanggal otomatis menggunakan tanggal saat ini
-- Validasi input untuk memastikan nominal lebih dari 0
-- Interface yang responsif dan user-friendly
+### Fitur Utama:
+1. **Kartu Saldo**
+   - Menampilkan saldo total (hijau jika positif, merah jika negatif)
+   - Kartu pemasukan total (warna hijau)
+   - Kartu pengeluaran total (warna merah)
 
-## Teknologi yang Digunakan
+2. **Grafik Bulanan**
+   - Grafik batang pemasukan vs pengeluaran
+   - Data 6 bulan terakhir
+   - Legend untuk memudahkan pembacaan
 
-- **React Native** dengan **Expo** - Framework untuk pengembangan mobile
-- **Expo Router** - Navigasi berbasis file system
-- **Expo SQLite** - Database lokal untuk penyimpanan transaksi
-- **React Native Chart Kit** - Library untuk grafik dan visualisasi data
-- **TypeScript** - Type safety dan better development experience
-- **React Context** - State management global
-- **Async Storage** - Penyimpanan data lokal tambahan
+3. **Aksi Cepat**
+   - Tombol "Tambah Pemasukan" (hijau)
+   - Tombol "Tambah Pengeluaran" (merah)
 
-## Arsitektur Aplikasi
+### Pull-to-Refresh
+Tarik ke bawah untuk memperbarui data terbaru
 
+## 📋 Halaman Transaksi
+
+### Daftar Transaksi
+- Setiap item menampilkan:
+  - Keterangan transaksi
+  - Tanggal (format Indonesia)
+  - Nominal dengan tanda + (pemasukan) atau - (pengeluaran)
+  - Indikator visual (panah naik/turun)
+
+### Filter Transaksi
+1. **Filter Jenis**
+   - Semua
+   - Pemasukan saja
+   - Pengeluaran saja
+
+2. **Filter Tanggal**
+   - Tanggal mulai (format: YYYY-MM-DD)
+   - Tanggal akhir (format: YYYY-MM-DD)
+
+## ➕ Menambah Transaksi
+
+### Akses Form
+- Dari beranda / daftar transaksi: Tap tombol Add di header
+
+### Mengisi Form
+
+1. **Pilih Jenis Transaksi**
+   - Tap "Pemasukan" (hijau dengan panah turun)
+   - Tap "Pengeluaran" (merah dengan panah naik)
+
+2. **Input Nominal** (Wajib)
+   - Ketik angka (otomatis format ribuan)
+   - Contoh: ketik "50000" → tampil "50.000"
+   - Preview format rupiah muncul di bawah
+
+3. **Keterangan** (Opsional)
+   - Deskripsi singkat transaksi
+   - Contoh: "Gaji bulan ini", "Beli groceries", dll.
+
+4. **Tanggal**
+   - Otomatis pada tanggal pembuatan catatan transaksi
+
+### Menyimpan
+- Tombol "Simpan Transaksi" aktif jika nominal > 0
+- Loading state saat menyimpan
+- Notifikasi berhasil dan kembali ke halaman sebelumnya
+
+---
+
+## 🔧 Dokumentasi API
+
+### Overview
+Aplikasi menggunakan arsitektur layered dengan Context API untuk state management dan service layer untuk data persistence. Mendukung dua platform:
+- **Native**: SQLite database (iOS/Android)
+- **Web**: AsyncStorage dengan fallback ke localStorage
+
+### Core Services
+
+#### `FinanceContext`
+Context utama yang menyediakan state management untuk seluruh aplikasi.
+
+**Hook**: `useFinance()`
+
+**State**:
+```typescript
+interface FinanceContextType {
+  transactions: Transaction[];      // Daftar semua transaksi
+  summary: TransactionSummary;     // Ringkasan keuangan
+  isLoading: boolean;              // Status loading
+}
 ```
-app/
-├── _layout.tsx              # Root layout dengan FinanceProvider
-├── add-transaction.tsx      # Form tambah transaksi
-└── (tabs)/
-    ├── _layout.tsx         # Tab navigation layout
-    ├── index.tsx           # Halaman beranda
-    └── transactions.tsx    # Halaman daftar transaksi
 
-components/
-├── BalanceCard.tsx         # Komponen kartu saldo
-├── MonthlyChart.tsx        # Komponen grafik bulanan
-└── FilterModal.tsx         # Modal filter transaksi
+**Methods**:
+```typescript
+// Menambah transaksi baru
+addTransaction(transaction: Omit<Transaction, 'id' | 'createdAt'>): Promise<void>
 
-contexts/
-└── FinanceContext.tsx      # Context untuk state management
+// Menghapus transaksi berdasarkan ID
+deleteTransaction(id: number): Promise<void>
 
-services/
-└── DatabaseService.ts      # Service untuk operasi database
+// Refresh semua data
+refreshData(): Promise<void>
 
-types/
-└── Transaction.ts          # TypeScript interfaces
+// Filter transaksi
+getFilteredTransactions(
+  type?: 'income' | 'expense',
+  startDate?: string,
+  endDate?: string
+): Promise<Transaction[]>
+
+// Data grafik bulanan
+getMonthlyData(): Promise<{ month: string; income: number; expense: number }[]>
 ```
 
-## Cara Menjalankan
+#### `UnifiedStorageService`
+Service layer yang menangani penyimpanan data dengan platform detection.
 
-1. **Instalasi Dependencies**
-   ```bash
-   npm install
-   ```
+**Core Methods**:
+```typescript
+// Inisialisasi database/storage
+init(): Promise<void>
 
-2. **Menjalankan Development Server**
-   ```bash
-   npm start
-   ```
+// CRUD Operations
+addTransaction(transaction): Promise<number>
+getAllTransactions(): Promise<Transaction[]>
+deleteTransaction(id: number): Promise<void>
 
-3. **Menjalankan di Device/Emulator**
-   - Android: `npm run android`
-   - iOS: `npm run ios`
-   - Web: `npm run web`
+// Analytics
+getTransactionSummary(): Promise<TransactionSummary>
+getMonthlyData(): Promise<{ month: string; income: number; expense: number }[]>
 
-## Database Schema
+// Utility
+clearAllData(): Promise<void>
+getPlatformInfo(): { platform: string; storageType: string }
+```
 
-Aplikasi menggunakan SQLite dengan skema tabel sebagai berikut:
+### Data Types
 
-```sql
-CREATE TABLE transactions (
-  id INTEGER PRIMARY KEY AUTOINCREMENT,
-  type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
-  amount REAL NOT NULL CHECK (amount > 0),
-  description TEXT,
-  date TEXT NOT NULL,
-  createdAt TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP
+#### `Transaction`
+```typescript
+interface Transaction {
+  id: number;                    // Auto-generated ID
+  type: 'income' | 'expense';    // Jenis transaksi
+  amount: number;                // Nominal (dalam rupiah)
+  description: string;           // Keterangan
+  date: string;                  // Format: YYYY-MM-DD
+  createdAt: string;            // Timestamp pembuatan
+}
+```
+
+#### `TransactionSummary`
+```typescript
+interface TransactionSummary {
+  totalIncome: number;    // Total pemasukan
+  totalExpense: number;   // Total pengeluaran  
+  balance: number;        // Saldo (income - expense)
+}
+```
+
+### Usage Examples
+
+#### Menambah Transaksi
+```typescript
+const { addTransaction } = useFinance();
+
+await addTransaction({
+  type: 'income',
+  amount: 5000000,
+  description: 'Gaji bulanan',
+  date: '2025-07-29'
+});
+```
+
+#### Filter Transaksi
+```typescript
+const { getFilteredTransactions } = useFinance();
+
+// Hanya pemasukan bulan ini
+const incomeThisMonth = await getFilteredTransactions(
+  'income', 
+  '2025-07-01', 
+  '2025-07-31'
 );
 ```
 
-## Fitur Responsive Design
+#### Data Grafik
+```typescript
+const { getMonthlyData } = useFinance();
 
-- Desain adaptif untuk berbagai ukuran layar (smartphone dan tablet)
-- Layout yang optimal untuk perangkat Android
-- Support untuk dark mode dan light mode
-- Interface yang mengikuti Material Design principles
+const chartData = await getMonthlyData();
+// Returns: [{ month: '2025-07', income: 5000000, expense: 2000000 }, ...]
+```
 
-## State Management
+### Error Handling
+Semua method service menggunakan try-catch dan akan throw error jika operasi gagal. Context akan menangani error dan menampilkan alert kepada user.
 
-Aplikasi menggunakan React Context untuk mengelola state global:
-- **FinanceContext**: Mengelola data transaksi, summary, dan operasi database
-- **Optimistic updates**: UI langsung terupdate saat ada perubahan data
-- **Error handling**: Penanganan error yang comprehensive dengan user feedback
-
-## Keamanan Data
-
-- Data disimpan secara lokal menggunakan SQLite
-- Tidak ada data yang dikirim ke server eksternal
-- Validasi input untuk mencegah data yang tidak valid
-- Transaction rollback pada kasus error
-
-## Kontribusi
-
-Aplikasi ini dibuat sebagai contoh implementasi aplikasi keuangan pribadi sederhana. Anda dapat:
-- Fork repository ini
-- Menambahkan fitur baru
-- Melaporkan bug
-- Memberikan saran perbaikan
-
-## Lisensi
-
-MIT License
+### Performance
+- Data di-cache dalam Context state
+- Refresh otomatis setelah operasi CUD
+- Pull-to-refresh untuk manual refresh
+- Lazy loading untuk data grafik
